@@ -1,113 +1,224 @@
-<!DOCTYPE html>
-<html>
-<head>
-<meta charset="utf-8">
-<title>Gaza Damage Assessment by the United Nations</title>
-<meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no">
-<link href="https://api.mapbox.com/mapbox-gl-js/v3.1.2/mapbox-gl.css" rel="stylesheet">
-<script src="https://api.mapbox.com/mapbox-gl-js/v3.1.2/mapbox-gl.js"></script>
-<script src="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-compare/v0.4.0/mapbox-gl-compare.js"></script>
-<link rel="stylesheet" href="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-compare/v0.4.0/mapbox-gl-compare.css" type="text/css">
-<style>
-body { margin: 0; padding: 0; }
-#map { position: absolute; top: 0; bottom: 0; width: 100%; }
-</style>
-</head>
-<body>
-<style>
-body {
-overflow: hidden;
-}
- 
-body * {
--webkit-touch-callout: none;
--webkit-user-select: none;
--moz-user-select: none;
--ms-user-select: none;
-user-select: none;
-} 
-.map {
-position: absolute;
-top: 0;
-bottom: 0;
-width: 100%;
-}
-.mapboxgl-compare .compare-swiper-vertical {
-	background-color: black;
-}
-.mapboxgl-compare {
-    background-color: black;}
-</style>
-<div id="comparison-container">
-<div id="before" class="map">
-</div>
+    <!DOCTYPE html>
+    <html>
 
-<div id="after" class="map"></div>
-</div>
-<script>
+    <head>
+        
+    <meta charset='utf-8' />
+    <title></title>
+    <meta name='viewport' content='initial-scale=1,maximum-scale=1,user-scalable=no' />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.5.0/jquery.min.js"></script>
+    <script src='https://api.mapbox.com/mapbox-gl-js/v2.0.1/mapbox-gl.js'></script>
+    <link href='https://api.mapbox.com/mapbox-gl-js/v2.0.1/mapbox-gl.css' rel='stylesheet' />
+    <script src='https://npmcdn.com/csv2geojson@latest/csv2geojson.js'></script>
+    <script src='https://npmcdn.com/@turf/turf/turf.min.js'></script>
+    <style>
 
-/*
-TODO:
-Open this page with your local server. You should see a blank page.
-1. set mapboxgl.accessToken as your unique access token from your mapbox account.
-2. set the style for the before container to be your 2010 data style
-3. set the style for the after container to be your 2020 data style
-NOTE: 1 of the ways you can view your style urls and access token:
-- in the main studio interface with a list of all your styles
-- click on the share icon to the right of each style 
-- scrolling down to Developer resources section
-- copying the Access Token and the Style URL found there.
-- Your default Access Token is the same across all your styles
-- each map has a unique Style URL
+         /* Adding Title and Description */
+        body {
+        margin: 0;
+        padding: 0;
+        }
 
-4. add center coordinates for each map 
-- for a U.S. map, use the geographical center as a starting point. -99.107,41.726
-5. set zoom for each map - start around 4
-Refresh your page on your browser, 
-you should now see a basic map that allows you to swipe between 2010 and 2020 data.
+        #description {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            width: 400px; /* Set the width to 400 pixels */
+            height: 150px; /* Set the height to 200 pixels */
+            background-color: #fff;
+            padding: 10px;
+            border-radius: 5px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            font-size: 12px; /* Set the font size to 16 pixels */
+            color: #333; /* Set the text color to dark gray */
+            font-family: Arial, sans-serif; /* Specify the font family */
+            z-index: 1000; /* Set a high z-index value */
+        }
 
-6. If anything doens't look good, go back and fix it in your mapbox styles. 
+        #map {
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        width: 100%;
+        }
 
-7. INDEPENDENTLY - Add your choice of 2 additional features to this map to make it better:
-You can add a title or label using HTML to each side of the map, 
-add a legend by creating a legend image and inserting it with html.
-or add mapbox builtin interface elements like zoom, geolocation, search to the map.
-You can get a sense of basic elemetns by looking through this list of mapbox examples:
-zoom buttons https://docs.mapbox.com/mapbox-gl-js/example/navigation/
-scale https://docs.mapbox.com/mapbox-gl-js/example/navigation-scale/
-fullscreen button https://docs.mapbox.com/mapbox-gl-js/example/fullscreen/
-search https://docs.mapbox.com/mapbox-search-js/example/add-search-box-to-map/
-locate user https://docs.mapbox.com/mapbox-gl-js/example/locate-user/
-set max bounds to restrict panning https://docs.mapbox.com/mapbox-gl-js/example/restrict-bounds/
+        /* Popup styling */
 
-8. finish by publishing this map through your github repo as a github page. Submit the URL to courseworks.
-*/
+        .mapboxgl-popup {
+        padding-bottom: 5px;
+        }
 
-mapboxgl.accessToken = 'pk.eyJ1Ijoib21nb3Jhc2hpIiwiYSI6ImNsczZpazA4MzFqbGIya3Awbzd3MWVqbTgifQ.JJn41ktf6QNQHglzu39Z1A';
+        .mapboxgl-popup-close-button {
+        display: none;
+        }
 
-const beforeMap = new mapboxgl.Map({
-    container: 'before',
-    style: "mapbox://styles/omgorashi/clui0kui9017z01ql3gkcafot",
-    center: [31.52, 34.44],
-    zoom: 15    
-    
-});
+   .mapboxgl-popup-content {
+    font: 400 15px/22px 'Roboto', 'Roboto Light', Sans-serif;
+    padding: 0;
+    width: 250px;
+    max-height: 500px; /* Set maximum height for the popup */
+    overflow-y: auto; /* Enable vertical scrolling */
+    background-color: #fff; /* Set background color to white */
+    border-radius: 5px; /* Add some border-radius for a softer look */
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); /* Add a subtle box shadow */
+    }
 
-const afterMap = new mapboxgl.Map({
-    container: 'after',
-    style: "mapbox://styles/omgorashi/clui0agzd01dn01pd8woca9wg",
-    center: [31.52, 34.44],
-    zoom: 15    
-    
-});
+    .mapboxgl-popup-content h3 {
+    text-align: center;
+    color: #333; /* Adjust text color to improve readability */
+    margin: 0;
+    padding: 15px;
+    font-weight: 700;
+    border-bottom: 1px solid #ccc; /* Add a bottom border for separation */
+    }
 
-const container = '#comparison-container';
+    .mapboxgl-popup-content h4 {
+    margin: 0;
+    padding: 10px 15px; /* Adjust padding for better spacing */
+    font-weight: 400;
+    }
 
-const map = new mapboxgl.Compare(beforeMap, afterMap, container, {
-    // Set this to enable comparing two maps by mouse movement:
-    mousemove: true
-});
-</script>
- 
-</body>
-</html>
+        .mapboxgl-container {
+        cursor: pointer;
+        }
+
+        .mapboxgl-popup-anchor-top>.mapboxgl-popup-content {
+        margin-top: 3px;
+        }
+
+        .mapboxgl-popup-anchor-top>.mapboxgl-popup-tip {
+        border-bottom-color: rgb(61, 59, 59);
+        }
+    </style>
+    </head>
+
+    <body>    
+        <div id="description">
+             <h4>  Gaza Heritage Monitor
+
+            </h3>
+
+            We are visualizing the Gaza Damage Map by comparing satellite data with site photos to make it available as an interactive map for researchers and activists to visualize the damage done to Palestine buildings and people. The map helps to understand how satellite imagery could be biased in understanding the site.
+            Data Point Sources: OPenStreetMap, United Nations Satellite Centre
+        </div>
+        <div id="map"></div>
+    <script>
+
+        var transformRequest = (url, resourceType) => {
+        var isMapboxRequest =
+            url.slice(8, 22) === "api.mapbox.com" ||
+            url.slice(10, 26) === "tiles.mapbox.com";
+        return {
+            url: isMapboxRequest
+            ? url.replace("?", "?pluginName=sheetMapper&")
+            : url
+        };
+        };
+        //YOUR TURN: add your Mapbox token
+        
+        mapboxgl.accessToken = 'pk.eyJ1Ijoib21nb3Jhc2hpIiwiYSI6ImNsczZpazA4MzFqbGIya3Awbzd3MWVqbTgifQ.JJn41ktf6QNQHglzu39Z1A'; //Mapbox token 
+        var map = new mapboxgl.Map({
+        container: 'map', // container id
+        style: 'mapbox://styles/mapbox/satellite-v9', // YOUR TURN: choose a style: https://docs.mapbox.com/api/maps/#styles
+        center: [34.3612727864078, 31.423879915023853], // starting position [lng, lat]
+        zoom: 11,// starting zoom
+        
+        transformRequest: transformRequest
+        });
+
+        $(document).ready(function () {
+        $.ajax({
+            type: "GET",
+            //YOUR TURN: Replace with csv export link
+            url: 'https://docs.google.com/spreadsheets/d/1S5UsCUU3DHrik2O3mZ24oQSEyD1Ll5Ic/gviz/tq?tqx=out:csv&sheet=Sheet1',
+            dataType: "text",
+            success: function (csvData) { makeGeoJSON(csvData); }
+        });
+
+        //Padding, Title, Context, Rotation of map orientation... (Telling a story/narrative on the page//
+
+        function makeGeoJSON(csvData) {
+            csv2geojson.csv2geojson(csvData, {
+            latfield: 'Latitude',
+            lonfield: 'Longitude',
+            delimiter: ','
+            }, function (err, data) {
+            map.on('load', function () {0
+
+                //Add the the layer to the map
+                map.addLayer({
+                'id': 'csvData',
+                'type': 'circle',
+                'source': {
+                    'type': 'geojson',
+                    'data': data
+                },
+                'paint': {
+                    'circle-radius': 2,
+                    'circle-color': "red",
+                }
+                });
+                // When a click event occurs on a feature in the csvData layer, open a popup at the
+                // location of the feature, with description HTML from its properties.
+                map.on('click', 'csvData', function (e) {
+                var coordinates = e.features[0].geometry.coordinates.slice();
+
+                //set popup text
+                //You can adjust the values of the popup to match the headers of your CSV.
+                // For example: e.features[0].properties.Name is retrieving information from the field Name in the original CSV.
+                var description =
+                    `<h3>` + e.features[0].properties.Name + `</h3>` + `<h4>` +
+                    `Address: ` + `<b>` + e.features[0].properties.Address + `</b>` + `</h4>` + `<h4>` +
+                    `<b>` + `Damage Status: ` + `</b>` + e.features[0].properties.DamageStatus + `</h4>` + `<br>` +
+                    `Significance: ` + `<h3>` + e.features[0].properties.BuildingType + `</h3>` + `<br>` +
+                    `<div class="image-container" style="text-align: center;">` +
+                    `<div class="image-label">Before</div>` +
+                    `<img src="` + e.features[0].properties.Before + `" style="max-width: 150px;" class="popup-image" alt="Before Image">` +
+                    `</div>` +
+                    `<div class="image-container" style="text-align: center;">` +
+                    `<div class="image-label">After</div>` +
+                    `<img src="` + e.features[0].properties.After + `" style="max-width: 150px;" class="popup-image" alt="After Image">` +
+                    `</div>`;
+                // Adding Additional Feature Layer info (columns)
+                // Ensure that if the map is zoomed out such that multiple
+                // copies of the feature are visible, the popup appears
+                // over the copy being pointed to.
+                while (Math.abs(e.lngLat.lng - coordinates[0]) > 180) {
+                    coordinates[0] += e.lngLat.lng > coordinates[0] ? 360 : -360;
+                }
+
+                //add Popup to map
+
+                new mapboxgl.Popup()
+                    .setLngLat(coordinates)
+                    .setHTML(description)
+                    .addTo(map);
+                });
+
+                // Change the cursor to a pointer when the mouse is over the places layer.
+                map.on('mouseenter', 'csvData', function () {
+                map.getCanvas().style.cursor = 'pointer';
+                });
+
+                // Change it back to a pointer when it leaves.
+                map.on('mouseleave', 'csvData', function () {
+                map.getCanvas().style.cursor = '';
+                });
+
+                var bbox = turf.bbox(data);
+                map.fitBounds(bbox, { padding: 50 });
+
+            });
+
+            });
+        };
+        });
+
+
+
+
+    </script>
+
+    </body>
+
+    </html>
